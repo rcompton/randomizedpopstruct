@@ -3,34 +3,15 @@ from numpy import *
 
 import pca_from_hd
 
+#make a rank k A
+m,k,n = 1124, 27, 352 
+A = dot(random.standard_normal((m,k)), random.standard_normal((k,n)))
+A *= 1.0/linalg.norm(A)
 
-m,n = 1000, 250
-
-A = random.standard_normal((m,n))
-
-Q,R = linalg.qr(A)
-
-print linalg.norm(A - dot(Q, dot(transpose(Q), A) ) ), "normal QR"
-
-
+#do a python svd, V is output as Vh in pthon
 u,s,v = linalg.svd(A, full_matrices=False)
+print linalg.norm( A - dot(u, dot(diag(s), v)) ), "usual SVD error"
 
-U,S,V = pca_from_hd.pca(A)
-#U,S,V = pca_from_hd.pca(A, 100, 3, 12)
-
-print shape(u)
-print shape(s)
-print shape(v)
-
-print linalg.norm( dot( (dot(u, diag(s) )), v) - A )
-
-print shape(U), "U"
-print shape(diag(S)), "S"
-print shape(V), "V"
-
-print shape( dot( (dot(U, diag(S) )), V ) ), "USV shape"
-print linalg.norm( dot( (dot(U, diag(S) )), V ) - A)
-
-print S
-print s[:10]
-
+#do a Tygert svd
+U,S,V = pca_from_hd.pca(A, 27, 2)
+print linalg.norm( A - dot(U, dot(diag(S), V)) ), "Tygert SVD error"

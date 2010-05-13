@@ -3,8 +3,11 @@ from numpy import *
 
 #
 #Same as Tygert's matlab code.
-#
-def pca(A, k = 16, its = 2, p = 12, pseudo = True):
+#k is the target rank of the low rank approx
+#its is the number of iterations of the power method
+#p is how much we pad the addtional sample dimensions
+#pseudo is always true no matter what
+def pca(A, k = 6, its = 2, p = 12, pseudo = True):
     l = k + p
     m,n = shape(A)
 
