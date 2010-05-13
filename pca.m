@@ -103,12 +103,12 @@ function [U,S,V] = pca(A,k,its,l)
 % Check the number of inputs.
 %
 if(nargin < 1)
-  error('MATLAB:pca:TooFewIn',...
+    error('MATLAB:pca:TooFewIn',...
         'There must be at least 1 input.')
 end
 
 if(nargin > 4)
-  error('MATLAB:pca:TooManyIn',...
+    error('MATLAB:pca:TooManyIn',...
         'There must be at most 4 inputs.')
 end
 
@@ -116,7 +116,7 @@ end
 % Check the number of outputs.
 %
 if(nargout ~= 3)
-  error('MATLAB:pca:WrongNumOut',...
+    error('MATLAB:pca:WrongNumOut',...
         'There must be exactly 3 outputs.')
 end
 
@@ -124,30 +124,30 @@ end
 % Set the inputs k, its, and l to default values, if necessary.
 %
 if(nargin == 1)
-  k = 6;
-  its = 2;
-  l = k+2;
+    k = 6;
+    its = 2;
+    l = k+2;
 end
 
 if(nargin == 2)
-  its = 2;
-  l = k+2;
+    its = 2;
+    l = k+2;
 end
 
 if(nargin == 3)
-  l = k+2;
+    l = k+2;
 end
 
 %
 % Check the first input argument.
 %
 if(~isfloat(A))
-  error('MATLAB:pca:In1NotFloat',...
+    error('MATLAB:pca:In1NotFloat',...
         'Input 1 must be a floating-point matrix.')
 end
 
 if(isempty(A))
-  error('MATLAB:pca:In1Empty',...
+    error('MATLAB:pca:In1Empty',...
         'Input 1 must not be empty.')
 end
 
@@ -160,37 +160,37 @@ end
 % Check the remaining input arguments.
 %
 if(size(k,1) ~= 1 || size(k,2) ~= 1)
-  error('MATLAB:pca:In2Not1x1',...
+    error('MATLAB:pca:In2Not1x1',...
         'Input 2 must be a scalar.')
 end
 
 if(size(its,1) ~= 1 || size(its,2) ~= 1)
-  error('MATLAB:pca:In3Not1x1',...
+    error('MATLAB:pca:In3Not1x1',...
         'Input 3 must be a scalar.')
 end
 
 if(size(l,1) ~= 1 || size(l,2) ~= 1)
-  error('MATLAB:pca:In4Not1x1',...
+    error('MATLAB:pca:In4Not1x1',...
         'Input 4 must be a scalar.')
 end
 
 if(k <= 0)
-  error('MATLAB:pca:In2NonPos',...
+    error('MATLAB:pca:In2NonPos',...
         'Input 2 must be > 0.')
 end
 
 if((k > m) || (k > n))
-  error('MATLAB:pca:In2TooBig',...
+    error('MATLAB:pca:In2TooBig',...
         'Input 2 must be <= the smallest dimension of Input 1.')
 end
 
 if(its < 0)
-  error('MATLAB:pca:In3Neg',...
+    error('MATLAB:pca:In3Neg',...
         'Input 3 must be >= 0.')
 end
 
 if(l < k)
-  error('MATLAB:pca:In4ltIn2',...
+    error('MATLAB:pca:In4ltIn2',...
         'Input 4 must be >= Input 2.')
 end
 
@@ -198,150 +198,164 @@ end
 % SVD A directly if (its+1)*l >= m/1.25 or (its+1)*l >= n/1.25.
 %
 if(((its+1)*l >= m/1.25) || ((its+1)*l >= n/1.25))
-
-  if(~issparse(A))
-    [U,S,V] = svd(A,'econ');
-  end
-
-  if(issparse(A))
-    [U,S,V] = svd(full(A),'econ');
-  end
-%
-% Retain only the leftmost k columns of U, the leftmost k columns of V,
-% and the uppermost leftmost k x k block of S.
-%
-  U = U(:,1:k);
-  V = V(:,1:k);
-  S = S(1:k,1:k);
-
-  return
-
+    
+    if(~issparse(A))
+        [U,S,V] = svd(A,'econ');
+    end
+    
+    if(issparse(A))
+        [U,S,V] = svd(full(A),'econ');
+    end
+    %
+    % Retain only the leftmost k columns of U, the leftmost k columns of V,
+    % and the uppermost leftmost k x k block of S.
+    %
+    U = U(:,1:k);
+    V = V(:,1:k);
+    S = S(1:k,1:k);
+    
+    return
+    
 end
 
 
+%
+% Why is this different for this case?
+%
 if(m >= n)
-
-%
-% Apply A to a random matrix, obtaining H.
-%
-  rand('seed',rand('seed'));
-
-  if(isreal(A))
-    H = A*(2*rand(n,l)-ones(n,l));
-  end
-
-  if(~isreal(A))
-    H = A*( (2*rand(n,l)-ones(n,l)) + i*(2*rand(n,l)-ones(n,l)) );
-  end
-
-  rand('twister',rand('twister'));
-
-%
-% Initialize F to its final size and fill its leftmost block with H.
-%
-  F = zeros(m,(its+1)*l);
-  F(1:m, 1:l) = H;
-
-%
-% Apply A*A' to H a total of its times,
-% augmenting F with the new H each time.
-%
-  for it = 1:its
-    H = (H'*A)';
-    H = A*H;
-    F(1:m, (1+it*l):((it+1)*l)) = H;
-  end
-
-  clear H;
-
-%
-% Form a matrix Q whose columns constitute an orthonormal basis
-% for the columns of F.
-%
-  [Q,R,E] = qr(F,0);
-
-  clear F R E;
-
-%
-% SVD Q'*A to obtain approximations to the singular values
-% and right singular vectors of A; adjust the left singular vectors
-% of Q'*A to approximate the left singular vectors of A.
-%
-  [U2,S,V] = svd(Q'*A,'econ');
-  U = Q*U2;
-
-  clear Q U2;
-
-%
-% Retain only the leftmost k columns of U, the leftmost k columns of V,
-% and the uppermost leftmost k x k block of S.
-%
-  U = U(:,1:k);
-  V = V(:,1:k);
-  S = S(1:k,1:k);
-
+    
+    %
+    % Apply A to a random matrix, obtaining H.
+    %
+    rand('seed',0)
+    %rand('seed',rand('seed'));
+    
+    %
+    % Why do we center the random dist at 1?
+    %
+    if(isreal(A))
+        H = A*(2*rand(n,l)-ones(n,l));
+    end
+    
+    if(~isreal(A))
+        H = A*( (2*rand(n,l)-ones(n,l)) + i*(2*rand(n,l)-ones(n,l)) );
+    end
+    
+    %rand('twister',rand('twister'));
+    
+    %
+    % Initialize F to its final size and fill its leftmost block with H.
+    %
+    F = zeros(m,(its+1)*l);
+    F(1:m, 1:l) = H;
+    
+    %
+    % Apply A*A' to H a total of its times,
+    % augmenting F with the new H each time.
+    %
+    for it = 1:its
+        H = (H'*A)';
+        H = A*H;
+        F(1:m, (1+it*l):((it+1)*l)) = H;
+    end
+    
+    clear H;
+    
+    %
+    % Form a matrix Q whose columns constitute an orthonormal basis
+    % for the columns of F.
+    % Pivoting makes this more accurate and efficient
+    % Not pivoting will still form a basis...
+    %
+    %[Q,R,E] = qr(F,0);
+    
+    [Q,R] = qr(F);
+    disp('no pivots')
+           
+    clear F R E;
+    
+    %
+    % SVD Q'*A to obtain approximations to the singular values
+    % and right singular vectors of A; adjust the left singular vectors
+    % of Q'*A to approximate the left singular vectors of A.
+    %
+    [U2,S,V] = svd(Q'*A,'econ');
+    U = Q*U2;
+    
+    clear Q U2;
+    
+    %
+    % Retain only the leftmost k columns of U, the leftmost k columns of V,
+    % and the uppermost leftmost k x k block of S.
+    %
+    U = U(:,1:k);
+    V = V(:,1:k);
+    S = S(1:k,1:k);
+    
 end
 
-
+%
+%Work with A' because that will be faster.
+%
 if(m < n)
-
-%
-% Apply A' to a random matrix, obtaining H.
-%
-  rand('seed',rand('seed'));
-
-  if(isreal(A))
-    H = ((2*rand(l,m)-ones(l,m))*A)';
-  end
-
-  if(~isreal(A))
-    H = (( (2*rand(l,m)-ones(l,m)) + i*(2*rand(l,m)-ones(l,m)) )*A)';
-  end
-
-  rand('twister',rand('twister'));
-
-%
-% Initialize F to its final size and fill its leftmost block with H.
-%
-  F = zeros(n,(its+1)*l);
-  F(1:n, 1:l) = H;
-
-%
-% Apply A'*A to H a total of its times,
-% augmenting F with the new H each time.
-%
-  for it = 1:its
-    H = A*H;
-    H = (H'*A)';
-    F(1:n, (1+it*l):((it+1)*l)) = H;
-  end
-
-  clear H;
-
-%
-% Form a matrix Q whose columns constitute an orthonormal basis
-% for the columns of F.
-%
-  [Q,R,E] = qr(F,0);
-
-  clear F R E;
-
-%
-% SVD A*Q to obtain approximations to the singular values
-% and left singular vectors of A; adjust the right singular vectors
-% of A*Q to approximate the right singular vectors of A.
-%
-  [U,S,V2] = svd(A*Q,'econ');
-  V = Q*V2;
-
-  clear Q V2;
-
-%
-% Retain only the leftmost k columns of U, the leftmost k columns of V,
-% and the uppermost leftmost k x k block of S.
-%
-  U = U(:,1:k);
-  V = V(:,1:k);
-  S = S(1:k,1:k);
-
+    
+    %
+    % Apply A' to a random matrix, obtaining H.
+    %
+    rand('seed',rand('seed'));
+    
+    if(isreal(A))
+        H = ((2*rand(l,m)-ones(l,m))*A)';
+    end
+    
+    if(~isreal(A))
+        H = (( (2*rand(l,m)-ones(l,m)) + i*(2*rand(l,m)-ones(l,m)) )*A)';
+    end
+    
+    rand('twister',rand('twister'));
+    
+    %
+    % Initialize F to its final size and fill its leftmost block with H.
+    %
+    F = zeros(n,(its+1)*l);
+    F(1:n, 1:l) = H;
+    
+    %
+    % Apply A'*A to H a total of its times,
+    % augmenting F with the new H each time.
+    %
+    for it = 1:its
+        H = A*H;
+        H = (H'*A)';
+        F(1:n, (1+it*l):((it+1)*l)) = H;
+    end
+    
+    clear H;
+    
+    %
+    % Form a matrix Q whose columns constitute an orthonormal basis
+    % for the columns of F.
+    %
+    [Q,R,E] = qr(F,0);
+    
+    clear F R E;
+    
+    %
+    % SVD A*Q to obtain approximations to the singular values
+    % and left singular vectors of A; adjust the right singular vectors
+    % of A*Q to approximate the right singular vectors of A.
+    %
+    [U,S,V2] = svd(A*Q,'econ');
+    V = Q*V2;
+    
+    clear Q V2;
+    
+    %
+    % Retain only the leftmost k columns of U, the leftmost k columns of V,
+    % and the uppermost leftmost k x k block of S.
+    %
+    U = U(:,1:k);
+    V = V(:,1:k);
+    S = S(1:k,1:k);
+    
 end
