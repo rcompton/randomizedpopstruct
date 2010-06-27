@@ -1,6 +1,7 @@
 import string
 
-
+#Input: a string corresponding to genotype data at a SNP location
+#Output: which letters make up the major allel and minor allel
 def get_allels(snp):
     haps = snp.split()
 
@@ -43,9 +44,11 @@ def get_allels(snp):
         mina = 'T'
     if minidx==3:
         mina = 'G'
+
     return maja,mina
 
-
+#Input: a string corresponding to a SNP column
+#Output: a list of 0/1/2 style data
 def letters_to_numbers(snp, majorallel, minorallel):
     haps = snp.split()
     nums = []
@@ -66,6 +69,7 @@ def letters_to_numbers(snp, majorallel, minorallel):
     del hap, haps,lexsmall
     return nums
 
+#convert a whole file to 0/1/2
 def do_a_whole_file(f):
     outnums = []
 

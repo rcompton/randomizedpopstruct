@@ -1,5 +1,4 @@
 
-
 clear all;
 close all;
 clc;
@@ -14,7 +13,7 @@ genotypes_chr22_CHB_r21a_nr_txt = genotypes_chr22_CHB_r21a_nr_txt';
 genotypes_chr22_JPT_r21a_nr_txt = genotypes_chr22_JPT_r21a_nr_txt';
 genotypes_chr22_YRI_r21a_nr_txt = genotypes_chr22_YRI_r21a_nr_txt';
 
-%This gets really stupid...
+%This is really stupid...
 [~,n1] = size(genotypes_chr22_CEU_r21a_nr_txt);
 [~,n2] = size(genotypes_chr22_CHB_r21a_nr_txt);
 [~,n3] = size(genotypes_chr22_JPT_r21a_nr_txt);
@@ -35,7 +34,7 @@ clear genotypes_chr22_YRI_r21a_nr_txt
 
 make_projections(big_data);
 
-k = 10;
+k = 6;
 
 tic
 [~,s,~] = pca(big_data,k);
