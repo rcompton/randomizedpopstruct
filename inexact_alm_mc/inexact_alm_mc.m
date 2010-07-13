@@ -1,7 +1,7 @@
 function [A iter svp] = fast_alm_mc(D, tol, maxIter)
 
 % Oct 2009
-% This matlab code implements the inexact augmented Lagrange multiplier 
+% This matlab code implements the inexact augmented Lagrange multiplier
 % method for Matrix Completion.
 %
 % D - m x n matrix of observations/data (required input)
@@ -12,21 +12,21 @@ function [A iter svp] = fast_alm_mc(D, tol, maxIter)
 % maxIter - maximum number of iterations
 %         - DEFAULT 1000, if omitted or -1.
 %
-% Model: 
+% Model:
 %     min |A|_*
 %     subj A + E = D, ProjectionOnOmega(E) = 0
 %
 % Algorithm:
 %
 % Initialize A,E,Y,u
-% while ~converged 
+% while ~converged
 %   minimize (inexactly, update A and E only once)
 %     L(A,E,Y,u) = |A|_* + <Y,D-A-E> + mu/2 * |D-A-E|_F^2;
 %   Y = Y + \mu * (D - A - E);
 %   \mu = \rho * \mu;
 % end
 %
-% Minming Chen, October 2009. Questions? v-minmch@microsoft.com ; 
+% Minming Chen, October 2009. Questions? v-minmch@microsoft.com ;
 % Arvind Ganesh (abalasu2@illinois.edu)
 %
 % Copyright: Perception and Decision Laboratory, University of Illinois, Urbana-Champaign
@@ -73,14 +73,14 @@ rho = 1.1 + 2.5 * rho_s;
 sv = 5;
 svp = sv;
 
-% Iteration 
+% Iteration
 iter = 0;
 converged = false;
 stopCriterion = 1;
-while ~converged         
-    %% alternative projection 
+while ~converged
+    %% alternative projection
     
-    iter = iter + 1;    
+    iter = iter + 1;
     if iter == 1
         Z = V;
     else
@@ -92,8 +92,8 @@ while ~converged
     else
         options.tol = min(0.1*tol, 0.01/mu);
     end
-    [A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);      
-        
+    [A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
+    
     %% predict the rank of A.
     diagS = diag(S);
     diagS = diagS(1:sv);
@@ -110,7 +110,7 @@ while ~converged
     else
         sv = min(svp + 10, n);
     end
-        
+    
     %% update A Y Z mu
     sqrtds = sqrt(diagS(1:svp) - 1/mu);
     A.U = A.U(:, 1:svp) * diag(sqrtds);
@@ -119,24 +119,24 @@ while ~converged
     Z = UVtOmega(A.U,A.V,I,J,col);
     Z = V - Z;
     Y = Y + mu*Z;
-        
-    %% stop Criterion    
+    
+    %% stop Criterion
     stopCriterion = norm(Z, 'fro') / d_norm;
     if stopCriterion < tol
         converged = true;
-    end    
+    end
     
-    %% display    
+    %% display
     if mod( iter, 10) == 0
         disp(['#svd ' num2str(iter) ' r(A) ' num2str(svp)...
             ' svn ' num2str(svn) ' max_idx ' num2str(max_idx) ' sv ' num2str(sv) ...
             ' stopCriterion ' num2str(stopCriterion) ' mu ' num2str(mu)]);
-    end    
+    end
     
     %% Maximum iterations reached
     if ~converged && iter >= maxIter
         disp('Maximum iterations reached') ;
-        converged = 1 ;       
+        converged = 1 ;
     end
     
     %% update mu

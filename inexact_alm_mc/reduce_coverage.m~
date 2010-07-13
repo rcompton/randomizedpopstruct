@@ -1,0 +1,24 @@
+function D = reduce_coverage(M, p)
+%
+% undersample a matrix and put it into sparse format
+% M is the full data
+% p is the probability that an entry is drawn from M
+% eg// reduce_coverage(M,.1) draws 10% from M
+%
+
+[m n] = size(M);
+
+num_nonzeros = m*n*p;
+
+M = reshape(M,[1 m*n]);
+
+locs = randsample(1:m*n, num_nonzeros);
+%column major, wtf matlab?
+[I J] = ind2sub(size(M), locs);
+I = I';
+J = J';
+assert(all(size(I) == size(J)));
+
+D = zeros(num_nonzeros,1);
+for k=1:num_nonzeros
+    

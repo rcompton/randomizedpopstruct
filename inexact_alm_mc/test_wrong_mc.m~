@@ -1,0 +1,14 @@
+
+m = 100;
+n = 150;
+r = 10;
+
+A = randn(m,r)*randn(r,n);
+
+B=zeros(m,n);
+B(Omegah) = A(Omegah);
+
+Aaprox = inexact_alm_mc(B, 1e-5);
+Aaprox = Aaprox.U*Aaprox.V';
+
+fprintf('err:%f \n',norm(Aaprox-A)/norm(A));
