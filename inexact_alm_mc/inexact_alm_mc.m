@@ -92,8 +92,7 @@ while ~converged
     else
         options.tol = min(0.1*tol, 0.01/mu);
     end
-    [A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
-    
+    [A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);    
     %% predict the rank of A.
     diagS = diag(S);
     diagS = diagS(1:sv);

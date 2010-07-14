@@ -16,21 +16,21 @@ if newDataFlag == 1
     m = 1000 ;
     pdr = 6;
     n = 1.5*m ;
-    r = 10;
+    r = 30;
     ML = (randn(m,r)); MR = (randn(n,r));
     A = ML*MR';
     p = min(round(r * (2 * n - r) * pdr), m*n);
     p = .1*m*n;
     rho_s = p / (m * n);
     
-    [a1 a2 a3 omega] = myRandsample(m,n,p);
-    %[I J col omega] = myRandsample(m, n, p);
-    %V = UVtOmega(ML, MR, I, J, col);
-    %D = spconvert([I,J,V; m,n,0]);
-    D = zeros(m,n);
-    D(omega) = A(omega);
-%    D = spconvert([I,J,ML'*MR]);
-%     clear I J col;
+    %[a1 a2 a3 omega] = myRandsample(m,n,p);
+    [I J col omega] = myRandsample(m, n, p);
+    V = UVtOmega(ML, MR, I, J, col);
+    D = spconvert([I,J,V; m,n,0]);
+    %D = zeros(m,n);
+    %D(omega) = A(omega);
+    %D = spconvert([I,J,ML'*MR]);
+    clear I J col;
     
 end
 
