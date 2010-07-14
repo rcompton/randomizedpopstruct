@@ -1,39 +1,7 @@
 function [A iter svp] = fast_alm_mc(D, tol, maxIter)
 
-% Oct 2009
-% This matlab code implements the inexact augmented Lagrange multiplier
-% method for Matrix Completion.
-%
-% D - m x n matrix of observations/data (required input)
-%
-% tol - tolerance for stopping criterion.
-%     - DEFAULT 1e-7 if omitted or -1.
-%
-% maxIter - maximum number of iterations
-%         - DEFAULT 1000, if omitted or -1.
-%
-% Model:
-%     min |A|_*
-%     subj A + E = D, ProjectionOnOmega(E) = 0
-%
-% Algorithm:
-%
-% Initialize A,E,Y,u
-% while ~converged
-%   minimize (inexactly, update A and E only once)
-%     L(A,E,Y,u) = |A|_* + <Y,D-A-E> + mu/2 * |D-A-E|_F^2;
-%   Y = Y + \mu * (D - A - E);
-%   \mu = \rho * \mu;
-% end
-%
-% Minming Chen, October 2009. Questions? v-minmch@microsoft.com ;
-% Arvind Ganesh (abalasu2@illinois.edu)
-%
-% Copyright: Perception and Decision Laboratory, University of Illinois, Urbana-Champaign
-%            Microsoft Research Asia, Beijing
-
-clear global;
-global A Sparse_Z;
+%clear global;
+%global A Sparse_Z;
 
 addpath PROPACK;
 
@@ -53,25 +21,31 @@ end
 
 % read sparse matrix D
 [m n] = size(D);
-[I J V] = find(D);
-p = length(I);
-col = [0; find(diff(J)); p];
-Sparse_Z = D;
-clear D;
+%[I J V] = find(D);
+omegah = find(D);
+%p = length(I);
+%col = [0; find(diff(J)); p];
+%Sparse_Z = D;
+%clear D;
 
 % initialize
-Y = zeros(p, 1);
-Z = zeros(p, 1);
-A.U = zeros(m, 5);
-A.V = zeros(n, 5);
-d_norm = norm(V, 'fro');
-mu = 0.3/(lansvd('Axz','Atxz',m,n,1,'L'));
-%mu = 0.3/pca(
-rho_s = p / (m * n);
+%Y = zeros(p, 1);
+Y = zeros(m,n);
+%Z = zeros(p, 1);
+Z = zeros(m,n);
+%A.U = zeros(m, 5);
+%A.V = zeros(n, 5);
+A = zeros(m,n);
+d_norm = norm(D, 'fro');
+%mu = 0.3/(lansvd('Axz','Atxz',m,n,1,'L'));
+mu = 0.3/norm(D);
+rho_s = length(omegah) / (m * n);
 rho = 1.1 + 2.5 * rho_s;
 
 sv = 5;
 svp = sv;
+
+shrink = inline('max(abs(A)-mu, 0).*((A>0)-.5)*2','A','mu');
 
 % Iteration
 iter = 0;
@@ -82,18 +56,19 @@ while ~converged
     
     iter = iter + 1;
     if iter == 1
-        Z = V;
+        Z = D;
     else
         Z = Z + 1/mu * Y;
-        Sparse_Z = spconvert([I,J,Z; m,n,0]);
+        %Sparse_Z = spconvert([I,J,Z; m,n,0]);
     end
     if stopCriterion > 10 * tol
         options.tol = 10*tol;
     else
         options.tol = min(0.1*tol, 0.01/mu);
     end
-    [A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
-    
+    %[A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
+    [U,S,V] = lansvd(A+Z,m,n,sv,'L',options);
+
     %% predict the rank of A.
     diagS = diag(S);
     diagS = diagS(1:sv);
@@ -111,13 +86,20 @@ while ~converged
         sv = min(svp + 10, n);
     end
     
-    %% update A Y Z mu
-    sqrtds = sqrt(diagS(1:svp) - 1/mu);
-    A.U = A.U(:, 1:svp) * diag(sqrtds);
-    A.V = A.V(:, 1:svp) * diag(sqrtds);
+    %% update A Y Z mu    
+    U = U(:,1:svp);
+    S = S(1:svp, 1:svp);
+    V = V(:,1:svp);
+    A = U*shrink(S,1/mu)*V';
+    %sqrtds = sqrt(diagS(1:svp) - 1/mu);
+    %A.U = A.U(:, 1:svp) * diag(sqrtds);
+    %A.V = A.V(:, 1:svp) * diag(sqrtds);
     
-    Z = UVtOmega(A.U,A.V,I,J,col);
-    Z = V - Z;
+    %Z = UVtOmega(A.U,A.V,I,J,col);
+    Z = zeros(m,n);
+    Z(omegah) = A(omegah);
+    
+    Z = D - Z;
     Y = Y + mu*Z;
     
     %% stop Criterion
