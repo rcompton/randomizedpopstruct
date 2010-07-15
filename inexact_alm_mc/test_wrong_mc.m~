@@ -1,14 +1,18 @@
+clear all;
 
-m = 100;
-n = 150;
+m = 400;
+n = 510;
 r = 10;
 
-A = randn(m,r)*randn(r,n);
+p = m*n*.1;
 
-B=zeros(m,n);
-B(Omegah) = A(Omegah);
+Axact = randn(m,r)*randn(r,n);
+Omegah = randsample(1:m*n, p);
 
-Aaprox = inexact_alm_mc(B, 1e-5);
-Aaprox = Aaprox.U*Aaprox.V';
+B = zeros(m,n);
+B(Omegah) = Axact(Omegah);
 
-fprintf('err:%f \n',norm(Aaprox-A)/norm(A));
+Aaprox = wrong_alm_mc(B, 1e-5);
+%Aaprox = Aaprox.U*Aaprox.V';
+
+fprintf('err:%f \n',norm(Aaprox-Axact)/norm(Axact));

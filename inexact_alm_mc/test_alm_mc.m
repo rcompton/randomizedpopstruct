@@ -13,10 +13,10 @@ if newDataFlag == 1
     
     clc ;
     close all ;
-    m = 1000 ;
+    m = 400 ;
+    n = 1300 ;
     pdr = 6;
-    n = 1.5*m ;
-    r = 30;
+    r = 10;
     ML = (randn(m,r)); MR = (randn(n,r));
     A = ML*MR';
     p = min(round(r * (2 * n - r) * pdr), m*n);

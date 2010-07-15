@@ -1,11 +1,9 @@
-function [A iter svp] = fast_alm_mc(D, tol, maxIter)
+function [A iter svp] = wrong_alm_mc(D, tol, maxIter)
 
 %clear global;
 %global A Sparse_Z;
 
-addpath PROPACK;
-
-[m n] = size(D);
+%addpath PROPACK;
 
 if nargin < 2
     tol = 1e-4;
@@ -22,7 +20,10 @@ end
 % read sparse matrix D
 [m n] = size(D);
 %[I J V] = find(D);
+
 omegah = find(D);
+omegahbar = find(D==0);
+
 %p = length(I);
 %col = [0; find(diff(J)); p];
 %Sparse_Z = D;
@@ -32,15 +33,19 @@ omegah = find(D);
 %Y = zeros(p, 1);
 Y = zeros(m,n);
 %Z = zeros(p, 1);
-Z = zeros(m,n);
+%Z = zeros(m,n);
 %A.U = zeros(m, 5);
 %A.V = zeros(n, 5);
 A = zeros(m,n);
+E = zeros(m,n);
+SS = zeros(m,n);
 d_norm = norm(D, 'fro');
 %mu = 0.3/(lansvd('Axz','Atxz',m,n,1,'L'));
 mu = 0.3/norm(D);
 rho_s = length(omegah) / (m * n);
 rho = 1.1 + 2.5 * rho_s;
+
+tau = 1/sqrt(max(m,n));
 
 sv = 5;
 svp = sv;
@@ -52,24 +57,34 @@ iter = 0;
 converged = false;
 stopCriterion = 1;
 while ~converged
-    %% alternative projection
-    
+    %% alternative projection    
     iter = iter + 1;
-    if iter == 1
-        Z = D;
-    else
-        Z = Z + 1/mu * Y;
+    %if iter == 1
+    %    Z = D;
+    %else
+    %    Z = Z + 1/mu * Y;
         %Sparse_Z = spconvert([I,J,Z; m,n,0]);
-    end
+    %end
     if stopCriterion > 10 * tol
         options.tol = 10*tol;
     else
         options.tol = min(0.1*tol, 0.01/mu);
     end
+    %% update E
+    E = zeros(m,n);
+    %E(omegah) = A(omegah);
+    %E = E - A;
+    E(omegahbar) = D(omegahbar) - A(omegahbar) - SS(omegahbar) + (1/mu)*Y(omegahbar);
+    
+    %% update SS
+    %SS = shrink(D-A-E+(1/mu)*Y,tau/mu);
+    
+    %% predict the rank of A.     
     %[A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
-    [U,S,V] = lansvd(A+Z,m,n,sv,'L',options);
+    %[U,S,V] = lansvd(A+Z,m,n,sv,'L',options);
+    %[U,S,V] = pca(A+Z,sv);   
+    [U,S,V] = pca(D-E-SS+(1/mu)*Y, sv);
 
-    %% predict the rank of A.
     diagS = diag(S);
     diagS = diagS(1:sv);
     svn = length(find(diagS > 1/mu));
@@ -85,25 +100,21 @@ while ~converged
     else
         sv = min(svp + 10, n);
     end
-    
-    %% update A Y Z mu    
+    %% update A  
     U = U(:,1:svp);
     S = S(1:svp, 1:svp);
     V = V(:,1:svp);
     A = U*shrink(S,1/mu)*V';
-    %sqrtds = sqrt(diagS(1:svp) - 1/mu);
-    %A.U = A.U(:, 1:svp) * diag(sqrtds);
-    %A.V = A.V(:, 1:svp) * diag(sqrtds);
+
     
-    %Z = UVtOmega(A.U,A.V,I,J,col);
-    Z = zeros(m,n);
-    Z(omegah) = A(omegah);
-    
-    Z = D - Z;
-    Y = Y + mu*Z;
+    %% update Y
+    %Z = zeros(m,n);
+    %Z(omegah) = A(omegah) + SS(omegah);
+    %Z = D - Z;    
+    Y = Y - mu*(A+E+SS-D);
     
     %% stop Criterion
-    stopCriterion = norm(Z, 'fro') / d_norm;
+    stopCriterion = norm(A+E+SS-D, 'fro') / d_norm;
     if stopCriterion < tol
         converged = true;
     end
