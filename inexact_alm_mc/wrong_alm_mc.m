@@ -46,6 +46,7 @@ rho_s = length(omegah) / (m * n);
 rho = 1.1 + 2.5 * rho_s;
 
 tau = 1/sqrt(max(m,n));
+moo = 0;10e-5;
 
 sv = 5;
 svp = sv;
@@ -75,9 +76,10 @@ while ~converged
     %E(omegah) = A(omegah);
     %E = E - A;
     E(omegahbar) = D(omegahbar) - A(omegahbar) - SS(omegahbar) + (1/mu)*Y(omegahbar);
-    
+    E(omegah) = (moo*mu/(1+mu*moo))*(D(omegah) - A(omegah) - SS(omegah) + (1/mu)*Y(omegah));
+
     %% update SS
-    %SS = shrink(D-A-E+(1/mu)*Y,tau/mu);
+    SS = shrink(D-A-E+(1/mu)*Y,tau/mu);
     
     %% predict the rank of A.     
     %[A.U,S,A.V] = lansvd('Axz','Atxz',m,n,sv,'L',options);
@@ -104,8 +106,9 @@ while ~converged
     U = U(:,1:svp);
     S = S(1:svp, 1:svp);
     V = V(:,1:svp);
-    A = U*shrink(S,1/mu)*V';
-
+    Akp1 = U*shrink(S,1/mu)*V';
+    stopCriterion = norm(Akp1-A)/norm(A);
+    A = Akp1;
     
     %% update Y
     %Z = zeros(m,n);
@@ -114,7 +117,7 @@ while ~converged
     Y = Y - mu*(A+E+SS-D);
     
     %% stop Criterion
-    stopCriterion = norm(A+E+SS-D, 'fro') / d_norm;
+    %stopCriterion = norm(A+E+SS-D, 'fro') / d_norm;
     if stopCriterion < tol
         converged = true;
     end
